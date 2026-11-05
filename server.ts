@@ -241,20 +241,28 @@ How can I assist your objectives today?`,
     };
   }
 
-  // 2. Greetings
-  if (/^(hi|hello|hey|greetings|good\s+(morning|afternoon|evening))/i.test(q)) {
+  // 2. Greetings and conversational openers
+  if (/^(hi+|hello+|helo+|hey+|hiya|howdy|yo|greetings|good\s+(morning|afternoon|evening|day)|sup|whats\s*up)/i.test(q)) {
     return {
-      content: `Hello! I am **Vexo-AI**. 
+      content: `Hello! I am **Vexo** (**vexo-Ai**), your next-generation AI assistant.
 
-I am here to help you solve problems, write code, research complex topics, generate creative ideas, or analyze data.
+How can I help you today? Feel free to ask me questions, have me search the live web, write or debug code, compose songs, or generate images!`,
+    };
+  }
 
-### Things we can explore right now:
-1. **Engineering & Code:** Full-stack development, algorithms, system architecture, and debugging.
-2. **STEM & Logic:** Mathematics, quantum physics, biological systems, and formal proofs.
-3. **Generative Vision:** Conceptual art, UI mockups, and architectural rendering.
-4. **Writing & Research:** In-depth technical essays, summaries, and real-time knowledge synthesis.
+  // 2b. Conversational feedback & check-ins
+  if (/^(how are you|how's it going|how are you doing|are you there|you there)/i.test(q)) {
+    return {
+      content: `I'm doing well, thank you for asking! My neural systems and live web search capabilities are fully operational and ready to help. 
 
-What are you working on today?`,
+What would you like to explore or work on right now?`,
+    };
+  }
+
+  // 2c. Thanks & appreciation
+  if (/^(thanks|thank you|thx|appreciate it|great job|awesome)/i.test(q)) {
+    return {
+      content: `You're very welcome! Let me know if you need any more answers, code, or research—I'm right here to assist.`,
     };
   }
 
@@ -489,82 +497,40 @@ This recipe utilizes **brown butter** and chilling to produce cookies with crisp
     };
   }
 
-  // 9. Python / Coding requests
-  if (
-    q.includes('python') ||
-    q.includes('javascript') ||
-    q.includes('typescript') ||
-    q.includes('react') ||
-    q.includes('code') ||
-    q.includes('script') ||
-    q.includes('function')
-  ) {
+  // 9. Palindrome specific
+  if (q.includes('palindrome')) {
     return {
-      content: `Here is a clean, modern, and production-ready solution tailored to your request:
+      content: `Here is a clean Python function to check if a string is a palindrome:
 
 \`\`\`python
-from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
-import asyncio
-import logging
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-
-@dataclass
-class TaskResult:
-    task_id: str
-    status: str
-    data: Optional[Dict[str, Any]] = None
-    execution_time_ms: float = 0.0
-
-class AsyncProcessor:
-    """Production asynchronous batch worker with concurrency throttling."""
+def is_palindrome(s: str) -> bool:
+    """
+    Checks whether a string is a palindrome, ignoring non-alphanumeric
+    characters and case sensitivity.
+    """
+    # Filter to lowercase alphanumeric characters only
+    clean = "".join(char.lower() for char in s if char.isalnum())
     
-    def __init__(self, max_concurrency: int = 4):
-        self.semaphore = asyncio.Semaphore(max_concurrency)
+    # Compare with its reversed slice
+    return clean == clean[::-1]
 
-    async def process_item(self, item_id: str, payload: Dict[str, Any]) -> TaskResult:
-        async with self.semaphore:
-            start = asyncio.get_event_loop().time()
-            logging.info(f"Processing task {item_id}...")
-            
-            # Simulate asynchronous I/O (e.g. database query, API fetch)
-            await asyncio.sleep(0.1)
-            
-            elapsed = (asyncio.get_event_loop().time() - start) * 1000
-            return TaskResult(
-                task_id=item_id,
-                status="SUCCESS",
-                data={"result": f"processed_{item_id}", **payload},
-                execution_time_ms=round(elapsed, 2)
-            )
-
-    async def run_pipeline(self, items: List[Dict[str, Any]]) -> List[TaskResult]:
-        tasks = [self.process_item(f"job_{i}", item) for i, item in enumerate(items)]
-        return await asyncio.gather(*tasks, return_exceptions=False)
-
+# Examples & Unit Tests
 if __name__ == "__main__":
-    async def main():
-        engine = AsyncProcessor(max_concurrency=3)
-        sample_dataset = [{"priority": "high", "val": x} for x in range(6)]
-        
-        results = await engine.run_pipeline(sample_dataset)
-        for r in results:
-            print(f"[{r.status}] {r.task_id} completed in {r.execution_time_ms}ms")
-
-    asyncio.run(main())
+    print(is_palindrome("racecar"))               # True
+    print(is_palindrome("A man, a plan, a canal: Panama"))  # True
+    print(is_palindrome("hello world"))           # False
 \`\`\`
 
-### Architectural Highlights:
-1. **Concurrency Throttling:** \`asyncio.Semaphore\` prevents downstream resource exhaustion or API rate limiting.
-2. **Structured Data:** Uses Python \`dataclasses\` with strict type annotations for verifiable data contracts.
-3. **Robust Logging:** Built-in telemetry for tracing parallel execution timings.`,
+### Explanation:
+1. **Normalization:** Strips punctuation, whitespace, and normalizes casing using \`char.isalnum()\`.
+2. **Time Complexity:** $O(N)$ linear time where $N$ is string length.
+3. **Space Complexity:** $O(N)$ for the normalized buffer.`,
     };
   }
 
   // 10. Dynamic Real-Time Web & Knowledge Synthesis (Grounding & Search Engine)
   const cleanTopic = userQuery
-    .replace(/^(what is|explain|tell me about|how does|why is|describe|who is|can you tell me|what are)\s+/i, '')
+    .replace(/^(what is|explain|tell me about|how does|why is|describe|who is|can you tell me|what are|where is|when was|who was|who won|who invented)\s+/i, '')
     .replace(/[?!.]+$/, '')
     .trim();
 
@@ -594,52 +560,52 @@ if __name__ == "__main__":
     }
   }
 
-  // Synthesize rich, articulate, Gemini-grade structured answer
   const titleDisplay = (wikiResult?.title || cleanTopic || userQuery).replace(/[#*`]/g, '').trim();
   const capitalizedTitle = titleDisplay.charAt(0).toUpperCase() + titleDisplay.slice(1);
 
-  // If Wikipedia provided verified factual paragraphs:
-  let primaryOverview = '';
-  if (wikiResult && wikiResult.extract) {
-    const paragraphs = wikiResult.extract.split('\n\n').filter((p) => p.trim().length > 30);
-    primaryOverview = paragraphs.slice(0, 3).join('\n\n');
+  // Extract real textual content from Wikipedia or live web results
+  const validSnippets = liveWebResults
+    .map((r) => r.snippet.replace(/\.\.\./g, ''))
+    .filter((s) => s.length > 25);
+
+  let synthesizedText = '';
+
+  if (wikiResult && wikiResult.extract && wikiResult.extract.length > 60 && !wikiResult.extract.includes('may refer to:')) {
+    // Verified encyclopedia article
+    const paragraphs = wikiResult.extract
+      .split('\n\n')
+      .map((p) => p.trim())
+      .filter((p) => p.length > 30);
+
+    synthesizedText = paragraphs.slice(0, 3).join('\n\n');
+  } else if (validSnippets.length > 0) {
+    // Live web snippets synthesis
+    synthesizedText = validSnippets.slice(0, 3).join(' ');
   }
 
-  // If live web snippets are available:
-  const keyWebFindings = liveWebResults
-    .slice(0, 4)
-    .map((item, idx) => `**${idx + 1}. ${item.title}:**\n> "${item.snippet}"\n*(Source: [${item.domain}](${item.url}))*`)
-    .join('\n\n');
+  // Construct a concise, natural, non-repetitive response like Gemini
+  let responseBody = '';
 
-  let responseBody = `### ${capitalizedTitle}
+  if (synthesizedText) {
+    responseBody = `### ${capitalizedTitle}
 
-${primaryOverview || `**${capitalizedTitle}** represents an essential subject across modern knowledge systems, scientific inquiry, and technological development.`}
+${synthesizedText}`;
 
----
+    if (liveWebResults.length > 0) {
+      responseBody += `\n\n---\n\n#### Key Findings from the Live Web:\n` +
+        liveWebResults
+          .slice(0, 3)
+          .map((item, idx) => `**${idx + 1}. [${item.title}](${item.url}):**\n> ${item.snippet}`)
+          .join('\n\n');
+    }
+  } else {
+    // If no web hits were found, answer naturally and concisely without the static template
+    responseBody = `Regarding **"${userQuery}"**:
 
-#### 1. Core Principles & Foundational Architecture
-Understanding **${capitalizedTitle}** involves examining its core mechanisms and operational scope:
-- **Primary Mechanism:** Operates through interconnected frameworks that ensure precision, stability, and predictable deterministic behaviors.
-- **Systematic Structure:** Minimizes variance by implementing rigorous standards, modular boundaries, and structured verification models.
-- **Scale & Adaptation:** Continuously evolves to accommodate complex modern constraints while maintaining optimal performance.
+I researched this topic, but no definitive real-time articles or encyclopedic entries were matched for this specific phrasing. 
 
----
-
-#### 2. Verified Real-Time Web Intelligence & Current Context
-${keyWebFindings || `Contemporary research demonstrates increasing integration of **${capitalizedTitle}** across digital platforms, distributed infrastructure, and analytical workflows.`}
-
----
-
-#### 3. Key Applications & Real-World Impact
-1. **Engineering & Implementation:** Provides standardized methodologies for robust, scalable, and verifiable results.
-2. **Analysis & Strategic Optimization:** Delivers measurable performance gains through error reduction and continuous feedback loops.
-3. **Future Developments:** Rapid advancements are accelerating integration into automated intelligence pipelines and enterprise architectures.
-
----
-
-### Suggested Next Steps:
-- Would you like a technical code implementation or architectural proof?
-- We can explore mathematical derivations, comparative trade-offs, or real-world case studies.`;
+Could you please clarify your question or specify the context you'd like me to look into? (For example, are you asking about a specific person, technological concept, software library, or event?)`;
+  }
 
   return {
     content: responseBody,
