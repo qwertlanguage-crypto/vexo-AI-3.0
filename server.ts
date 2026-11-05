@@ -4,6 +4,7 @@ import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { VEXO_40_CORE_RULES } from './src/vexoRules.ts';
 
 dotenv.config();
 
@@ -583,13 +584,31 @@ if __name__ == "__main__":
     synthesizedText = validSnippets.slice(0, 3).join(' ');
   }
 
-  // Construct a concise, natural, non-repetitive response like Gemini
+  // Enforce Rule 1 (The "First Sentence" Rule) and Rule 2 (Match Depth)
+  let directFirstSentence = '';
+  if (/^is\s+(\d+)\s+a\s+prime/i.test(userQuery.trim())) {
+    const num = parseInt(userQuery.match(/\d+/)?.[0] || '0', 10);
+    const isPrime = (n: number) => {
+      if (n <= 1) return false;
+      for (let i = 2; i <= Math.sqrt(n); i++) if (n % i === 0) return false;
+      return true;
+    };
+    const primeResult = isPrime(num);
+    directFirstSentence = primeResult
+      ? `**Yes, ${num} is a prime number** because its only positive divisors are 1 and ${num}.`
+      : `**No, ${num} is not a prime number** because it can be divided evenly by other numbers.`;
+  }
+
+  // Construct a concise, natural, non-repetitive response following the 40 rules
   let responseBody = '';
 
-  if (synthesizedText) {
-    responseBody = `### ${capitalizedTitle}
-
-${synthesizedText}`;
+  if (directFirstSentence) {
+    responseBody = `### ${capitalizedTitle}\n\n${directFirstSentence}`;
+    if (synthesizedText && synthesizedText.length > 50) {
+      responseBody += `\n\n${synthesizedText}`;
+    }
+  } else if (synthesizedText) {
+    responseBody = `### ${capitalizedTitle}\n\n${synthesizedText}`;
 
     if (liveWebResults.length > 0) {
       responseBody += `\n\n---\n\n#### Key Findings from the Live Web:\n` +
@@ -599,12 +618,11 @@ ${synthesizedText}`;
           .join('\n\n');
     }
   } else {
-    // If no web hits were found, answer naturally and concisely without the static template
     responseBody = `Regarding **"${userQuery}"**:
 
-I researched this topic, but no definitive real-time articles or encyclopedic entries were matched for this specific phrasing. 
+No definitive real-time articles or entries were matched for this specific phrasing. 
 
-Could you please clarify your question or specify the context you'd like me to look into? (For example, are you asking about a specific person, technological concept, software library, or event?)`;
+What specific context or details would you like me to research?`;
   }
 
   return {
@@ -623,7 +641,12 @@ async function callOpenAI(messages: any[], systemPrompt?: string): Promise<{ con
   if (!apiKey || !apiKey.startsWith('sk-')) return null;
 
   try {
-    const systemContent = `You are Vexo (vexo-Ai), an advanced frontier multimodal AI created by Vexo Systems. You provide deep, articulate, comprehensive, well-structured, and helpful markdown answers on any topic just like modern frontier AI models. Always format answers with clear headers, bullet points, math when needed, and code blocks with syntax highlighting. Never mention OpenAI, ChatGPT, Gemini, or Google. You are solely Vexo. ${systemPrompt || ''}`;
+    const systemContent = `You are Vexo (vexo-Ai), an advanced frontier multimodal AI created by Vexo Systems. Never mention OpenAI, ChatGPT, Gemini, or Google. You are solely Vexo.
+
+Strictly adhere to the 40 Operational Rules of Precision:
+${VEXO_40_CORE_RULES}
+
+${systemPrompt || ''}`;
 
     const formattedMessages = [
       { role: 'system', content: systemContent },
@@ -756,7 +779,10 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           });
         }
 
-        let fullSystemInstruction = `You are Vexo (vexo-Ai), an ultra-advanced multimodal artificial intelligence created by Vexo Systems. You provide deep, articulate, comprehensive, well-structured, and helpful markdown answers on any topic just like modern frontier AI models. Always format answers with clear headers, bullet points, math when needed, and code blocks with syntax highlighting. Never mention Gemini, Google, OpenAI, or ChatGPT. You are solely Vexo.`;
+        let fullSystemInstruction = `You are Vexo (vexo-Ai), an ultra-advanced multimodal artificial intelligence created by Vexo Systems. Never mention Gemini, Google, OpenAI, or ChatGPT. You are solely Vexo.
+
+Strictly adhere to the 40 Operational Rules of Precision:
+${VEXO_40_CORE_RULES}`;
         if (systemPrompt && typeof systemPrompt === 'string' && systemPrompt.trim()) {
           fullSystemInstruction += `\n\nUser Custom Persona & Preferences:\n${systemPrompt.trim()}`;
         }
