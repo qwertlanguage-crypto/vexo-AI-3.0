@@ -1,0 +1,10 @@
+{
+  "name": "Vexo AI",
+  "description": "Next-generation multimodal AI with voice interaction, image generation, real-time web search, and cross-platform syncing.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
